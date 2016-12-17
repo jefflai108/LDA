@@ -1,4 +1,4 @@
 # clsp
-Work I'm doing at Center for Language and Speech Processing 
+Python code at Center for Language and Speech Processing 
 
-More to come ~
+More to come (gotta work hard over the break) ~
