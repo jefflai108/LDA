@@ -151,33 +151,41 @@ def Evaluation():
 	"""
 	eigen_values, eigen_vectors = LDA()
 	P = eigen_vectors[:,-1] #at most C-1 dimensions
+    
 	
-	#######################################################################
-	#load data 
-	list_M_speaker = []
-	list_F_speaker = []
-	for key,mat in read_mat_scp("exp/ivectors_sre10_test_male/ivector.scp"):
-		list_M_speaker.append(mat)
-	for key,mat in read_mat_scp("exp/ivectors_sre10_test_female/ivector.scp"):
-		list_F_speaker.append(mat)
-	arr_M_speaker = np.vstack(list_M_speaker)	
-	arr_F_speaker = np.vstack(list_F_speaker)	
-	y1 = np.dot(arr_M_speaker, P) 
-	y2 = np.dot(arr_F_speaker, P) 
+    
+	#initiate list
+	list_speaker = []
+	list_index = []
+
+	#Create a list of i-vectors 
+	for key,mat in read_mat_scp(""):
+		list_speaker.append(mat)
+		list_index.append(key)
+	for key,mat in read_mat_scp(""):
+		list_speaker.append(mat)
+		list_index.append(key)
+
+	#Transform lists to matrices 
+	arr_speaker = np.vstack(list_speaker)	
+	y = np.dot(arr_speaker, P) 	
 	
-	Prev_diff = 100
-	Mini_threshold = -2
-	for threshold in np.arange(-1, 1, 0.001):
-		M_error_rate = np.mean(y1 > threshold) 
-		F_error_rate = np.mean(y2 < threshold) 
-		print "Male error rate is", M_error_rate, "and Female error rate is", F_error_rate, "while threshold value is", threshold
-		Cur_diff = abs(M_error_rate - F_error_rate) 	
-		if Cur_diff < Prev_diff: 
-			Prev_diff = Cur_diff
-			Mini_threshold = threshold 
-	print "The optimal threshold for the classifier is", Mini_threshold, "with Error rate difference", Prev_diff
+    #create dictionary
+	speaker_dic = {}
+	with open("/export/b15/janto/kaldi/kaldi/egs/sre10/v1/data/sre/utt2spk") as fopen:
+		for line in fopen: 
+			(key, id_val) = line.split()
+			speaker_dic[key] = id_val
 
-
+	#Create a list_dpeaker_id that corresponds to the order of list_index  
+	counter=0; 
+	list_speaker_id = []
+	for temp_index in list_index: #Double for-loop
+		for key, id_val in speaker_dic.iteritems(): 
+			if key == temp_index: 
+				list_speaker_id.append(id_val)
+				break
+		counter += 1
 
 if __name__ == '__main__':
 	Evaluation()
