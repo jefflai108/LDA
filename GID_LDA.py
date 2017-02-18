@@ -2,7 +2,7 @@
 from kaldi_io import read_mat_scp
 import numpy as np
 import scipy.linalg  
-
+np.seterr(divide='ignore', invalid='ignore')
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt 
@@ -43,18 +43,18 @@ def LDA():
 
 	#Implement Between-class covariance 
 	CovB = np.zeros((i_vector_dim, i_vector_dim)) #initiate covariance matrix 
-	CovB += np.outer(arr_male_mean-global_mean, arr_male_mean-global_mean)
-	CovB += np.outer(arr_female_mean-global_mean, arr_female_mean-global_mean)
+	CovB += np.dot(arr_male_mean-global_mean, (arr_male_mean-global_mean).T)
+	CovB += np.dot(arr_female_mean-global_mean, (arr_female_mean-global_mean).T)
 	CovB /= 2
 
 	#Implement Within-class covariances 
 	CovW1 = np.zeros((i_vector_dim, i_vector_dim))
 	CovW2 = np.zeros((i_vector_dim, i_vector_dim)) #initiate covariance matrices
 	for i in range(N_male_ivector): 
-		CovW1 += np.outer(arr_male[i]-arr_male_mean, arr_male[i]-arr_male_mean)
+		CovW1 += np.dot(arr_male[i]-arr_male_mean, (arr_male[i]-arr_male_mean).T)
 	CovW1 /= N_male_ivector
 	for i in range(N_female_ivector): 
-		CovW2 += np.outer(arr_female[i]-arr_female_mean, arr_female[i]-arr_female_mean)
+		CovW2 += np.dot(arr_female[i]-arr_female_mean, (arr_female[i]-arr_female_mean).T)
 	CovW2 /= N_female_ivector
 	CovW = (CovW1+CovW2)/2
 
@@ -65,8 +65,9 @@ def LDA():
 def Evaluation(): 
 	#Finding threshold value 
 	eigen_values, eigen_vectors = LDA()
-	P = eigen_vectors[:,-1] 
-	
+	P = eigen_vectors[:,-1]
+	P = P[:,None] 
+
 	#load data 
 	list_M_speaker = []
 	list_F_speaker = []
@@ -78,13 +79,13 @@ def Evaluation():
 	arr_F_speaker = np.vstack(list_F_speaker)	
 	y1 = np.dot(arr_M_speaker, P) 
 	y2 = np.dot(arr_F_speaker, P) 
-	
+
 	Prev_diff = 100
 	Mini_threshold = -2
 	for threshold in np.arange(-1, 1, 0.001):
 		M_error_rate = np.mean(y1 > threshold) 
 		F_error_rate = np.mean(y2 < threshold) 
-		print "Male error rate is", M_error_rate, "and Female error rate is", F_error_rate, "while threshold value is", threshold
+		#print "Male error rate is", M_error_rate, "and Female error rate is", F_error_rate, "while threshold value is", threshold
 		Cur_diff = abs(M_error_rate - F_error_rate) 	
 		if Cur_diff < Prev_diff: 
 			Prev_diff = Cur_diff
@@ -95,6 +96,7 @@ def plot():
 	#Visualize the data 
         eigen_values, eigen_vectors = LDA()
         P = eigen_vectors[:,-1]
+        P = P[:,None]
 
         #load data
         list_M_speaker = []
