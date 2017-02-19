@@ -237,7 +237,7 @@ def Evaluation():
 	with open("/export/b15/janto/kaldi/kaldi/egs/sre10/v1/data/sre10_test/trials") as fopen:
 		for line in fopen: 
 			(spk, i_vector_id, binary) = line.split()
-			if spk not in Uni_spk: 
+			if spk not in Uniq_spk: 
 				Uniq_spk.append(spk)
 			if i_vector_id not in Uniq_ivector: 
 				Uniq_ivector.append(i_vector_id)			
@@ -248,9 +248,9 @@ def Evaluation():
 
 	#test 8
 	print "test 8"
-	assert len(Uniq_spk) == len(list_enroll_speaker_id)
-	assert len(Uniq_ivector) == len(list_test_speaker)
-	assert objectvie.shape == S.shape 
+	assert len(Uniq_spk) < len(list_enroll_speaker_id)
+	assert len(Uniq_ivector) > len(list_test_speaker)
+	assert objective.shape == S.shape 
 
 	#Uniq_spk should have the same order as list_enroll_speaker_id
 	#Uniq_ivector should have the same order as list_test_speaker
@@ -281,9 +281,8 @@ def Evaluation():
 	
 	#test 10
 	print "test 10"
-	for row in range(objective.shape[0]): 
-		for column in range(objective.shape[1]):
-			print objective[row][column]
+	for row in objective: 
+		print row 
 
 	#Finding threshold 
 	threshold = 0
