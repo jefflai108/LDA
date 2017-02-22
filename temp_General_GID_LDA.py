@@ -224,8 +224,8 @@ def Evaluation():
 	############################################
 
 	print "The original lenght of list_enroll_speaker_id is", len(list_enroll_speaker_id) #11936
-
-	test1 = [] 
+	"""
+	test1 = []
 	for spk_id in Uniq_spk:
 		if spk_id not in list_enroll_speaker_id:
 			while spk_id in Uniq_spk: 
@@ -233,7 +233,10 @@ def Evaluation():
 				test1.append(spk_id)
 		#filter(lambda a: a != 2, x)
 		#filter(lambda spk_id: spk_id not in list_enroll_speaker_id, Uniq_spk)
-			
+	"""
+	New_Uniq_spk = [spk_id for spk_id in Uniq_spk if spk_id not in list_enroll_speaker_id]
+	Uniq_spk = New_Uniq_spk
+	"""
 	test2 = []
 	for spk_id in list_enroll_speaker_id:
 		if spk_id not in Uniq_spk:
@@ -243,19 +246,24 @@ def Evaluation():
 				del list_enroll_speaker_id[index]
 				del list_enroll_speaker[index]
 	"""
+	"""
 	for spk_id in list_enroll_speaker_id:
 		#if spk_id not in list_enroll_speaker_id:
 			#Uniq_spk.remove(spk_id)
 		#filter(lambda a: a != 2, x)
 		filter(lambda spk_id: spk_id not in Uniq_spk, list_enroll_speaker_id)
 	"""
+	New_list_enroll_speaker_id = [spk_id for spk_id in list_enroll_speaker_id if spk_id not in Uniq_spk]
+	list_enroll_speaker_id = New_list_enroll_speaker_id  
+
 	#test 5
 	print "test 5"
-	#print Uniq_spk:
+	#print Uniq_spk
 	#time.sleep(10)
-	#print list_enroll_speaker_id 
-	print "length of test1 is", len(test1)
-	print "length of test2 is", len(test2)
+	#print list_enroll_speaker_id
+	#print test1
+	time.sleep(10)
+	#print test2 
 	assert len(list_enroll_speaker_id) == len(list_enroll_speaker), "fail test 5"
 	print "length of list_enroll_speaker_id is", len(list_enroll_speaker_id) #7559
 	print "length of Uniq_spk is", len(Uniq_spk) #4226
@@ -415,3 +423,4 @@ def Evaluation():
 
 if __name__ == '__main__':
 	Evaluation()
+
