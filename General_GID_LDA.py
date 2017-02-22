@@ -5,6 +5,7 @@ np.seterr(divide='ignore', invalid='ignore')
 import collections 	
 from datetime import datetime
 import scipy.linalg 
+import sys 
 
 def LDA():
 	"""
@@ -150,10 +151,24 @@ def Evaluation():
 	Apply LDA() and find projection matrix and hence dimensionality reduction. 
 	Using Evaluation data to find threshold for the classifier. 
 	"""
+	startTime = datetime.now()
 	eigen_values, eigen_vectors = LDA()
 	print "Start Evaluation"
 	P = eigen_vectors[:,-1] #at most C-1 dimensions
 	P = P[:,None] #make it a column vector
+	
+	############################################
+	
+    #Create target-(non)target matrix 
+	Uniq_spk = []
+	Uniq_ivector = []
+	with open("/export/b15/janto/kaldi/kaldi/egs/sre10/v1/data/sre10_test/trials") as fopen:
+		for line in fopen: 
+			(spk, i_vector_id, binary) = line.split()
+			if spk not in Uniq_spk: 
+				Uniq_spk.append(spk)
+			if i_vector_id not in Uniq_ivector: 
+				Uniq_ivector.append(i_vector_id)
 
 	############################################
 	#Speaker Enrollment 
@@ -171,14 +186,6 @@ def Evaluation():
 		list_enroll_speaker.append(mat)
 		list_enroll_index.append(key)
 
-	#Transform lists to matrices 
-	arr_enroll_speaker = np.vstack(list_enroll_speaker)	
-	y_enroll = np.dot(arr_enroll_speaker, P) 	
-	
-	#test 5
-	assert y_enroll.shape[0] == arr_enroll_speaker.shape[0]
-	assert y_enroll.shape[1] == P.shape[1]
-
     #Create dictionary
 	speaker_enroll_Dic = {}
 	with open("/export/b15/janto/kaldi/kaldi/egs/sre10/v1/data/sre10_train/utt2spk") as fopen:
@@ -193,11 +200,40 @@ def Evaluation():
 			if key == temp_index: 
 				list_enroll_speaker_id.append(id_val)
 				break
+
+	############################################
+
+	for spk_id in list_enroll_speaker_id:
+		if spk_id not in Uniq_spk:
+			index = list_enroll_speaker_id.index(spk_id)
+			del list_enroll_speaker_id[index]
+			del list_enroll_speaker[index]
+	
+	for spk_id in Uniq_spk:
+		if spk_id not in list_enroll_speaker_id:
+			Uniq_spk.remove(spk_id)
+
+	#test 5
+	print "test 5"
+	assert len(list_enroll_speaker_id) == len(Uniq_spk), "fail test 5"
+	assert len(list_enroll_speaker_id) == len(list_enroll_speaker), "fail test 5"
+	for i in list_enroll_speaker_id: 
+		if i not in Uniq_spk: 
+			print "fail test 5"
+			sys.exit()
+
+	#Uniq_spk should have the same order as list_enroll_speaker_id
+	Uniq_spk = list_enroll_speaker_id
+	
+	#Transform lists to matrices 
+	arr_enroll_speaker = np.vstack(list_enroll_speaker)	
+	y_enroll = np.dot(arr_enroll_speaker, P) 	
+	
 	#test 6
-	try: 
-		print len(list_enroll_speaker_id) == arr_enroll_speaker.shape[0]
-	except Exception:
-		print "fail test 6"
+	print "test 6"
+	print len(list_enroll_speaker_id) == arr_enroll_speaker.shape[0]
+	assert y_enroll.shape[0] == arr_enroll_speaker.shape[0], "fail test 6"
+	assert y_enroll.shape[1] == P.shape[1], "fail test 6"
 
 	############################################	
 	#Speaker Testing 
@@ -215,12 +251,35 @@ def Evaluation():
 		list_test_speaker.append(mat)
 		list_test_index.append(key)
 
+#################################################
+
+	for ivector in list_test_speaker:
+		if ivector not in Uniq_ivector:
+			list_test_speaker.remove(ivector)
+	
+	for ivector in Uniq_ivector:
+		if ivector not in list_test_speaker:
+			Uniq_ivector.remove(ivector)
+
+	#test 7.1 
+	print "test 7.1"
+	assert len(list_test_speaker) == len(Uniq_ivector), "fail test 7.1"
+	for i in list_test_speaker: 
+		if i not in Uniq_ivector: 
+			print "fail test 7.1"
+			sys.exit()	
+
+	#Uniq_ivector should have the same order as list_test_speaker
+	Uniq_ivector = list_test_speaker
+
+##################################################
+
 	#Transform lists to matrices 
 	arr_test_speaker = np.vstack(list_test_speaker)	
 	y_test = np.dot(arr_test_speaker, P) 
 	
-	#test 7
-	print "test 7"
+	#test 7.2
+	print "test 7.2"
 	print y_test.shape[0] == arr_test_speaker.shape[0]
 	print y_test.shape[1] == P.shape[1]
 
@@ -230,30 +289,11 @@ def Evaluation():
 	#inner product of the enrollment data and testing data 
 	#S is a matrix with y_enroll.shape[0] by y_test.shape[0] dimensions
 	S = np.dot(y_enroll, y_test.T)
+	objective = np.zeros((len(Uniq_spk), len(Uniq_ivector)))			
 	
-    #Create target-(non)target matrix 
-	Uniq_spk = []
-	Uniq_ivector = []
-	with open("/export/b15/janto/kaldi/kaldi/egs/sre10/v1/data/sre10_test/trials") as fopen:
-		for line in fopen: 
-			(spk, i_vector_id, binary) = line.split()
-			if spk not in Uniq_spk: 
-				Uniq_spk.append(spk)
-			if i_vector_id not in Uniq_ivector: 
-				Uniq_ivector.append(i_vector_id)			
-
-	objective = np.zeros((len(Uniq_spk), len(Uniq_ivector)))
-	
-############################################################################
-
 	#test 8
 	print "test 8"
-	assert len(Uniq_spk) < len(list_enroll_speaker_id)
-	assert len(Uniq_ivector) > len(list_test_speaker)
-	assert objective.shape == S.shape 
-
-	#Uniq_spk should have the same order as list_enroll_speaker_id
-	#Uniq_ivector should have the same order as list_test_speaker
+	assert objective.shape == S.shape, "fail test 8"
 
 ############################################################################
 
@@ -274,8 +314,8 @@ def Evaluation():
 			elif binary == "nontarget":
 				objective[temp_row][temp_column] = -1
 	
-	for row in range(objective.shape[0]): 
-		for column in range(objective.shape[1]):
+	for row in xrange(objective.shape[0]): 
+		for column in xrange(objective.shape[1]):
 			if objective[row][column] != 1 and objective[row][column] != -1: 
 				objective[row][column] = 0 
 	
@@ -284,13 +324,51 @@ def Evaluation():
 	for row in objective: 
 		print row 
 
+############################################################################
 	#Finding threshold 
-	threshold = 0
-	C = np.zeros((len(Uniq_spk), len(Uniq_ivector)))
-	C = S > threshold 
+	(mini_false_rej, mini_false_accep) = (-100, -100) 
+	prev_diff = 100
+	(false_rej, false_accep) = (0, 0)
+	for threshold in np.arrangenp.arange(-2, 2, 0.01):
+		C = np.zeros((len(Uniq_spk), len(Uniq_ivector)))
+		C = S > threshold 
 
 	#Compare C with Objective to calculate error rate
-	#Loop over both matrix
+	#False rejection, also called a type I error, is a mistake occasionally made by 
+	#biometric security systems. In an instance of false rejection, the system fails to 
+	#recognize an authorized person and rejects that person as an impostor.
+		N_target = 0 
+		N_match = 0 
+		for row in xrange(objective.shape[0]): 
+			for column in xrange(objective.shape[1]):
+				if objective[row][column] == 1: 
+					N_target += 1
+					if C[row][column] == 0:
+						N_match += 1
+
+		false_rej = N_match/N_target*100
+	#False Acceptance, also called a type II error. A system's FAR typically is stated 
+	#as the ratio of the number of false acceptances divided by the number of 
+	#identification attempts.
+		N_nontarget = 0
+		N_match = 0
+		for row in xrange(objective.shape[0]): 
+			for column in xrange(objective.shape[1]):
+				if objective[row][column] == -1: 
+					N_target += 1		
+					if C[row][match] == 1:
+						N_match += 1 
+		false_accep = N_match/N_nontarget*100
+		
+		diff = abs(false_reg-false_accep)
+		if diff < prev_diff: 
+			prev_diff = diff 
+			mini_false_rej = false_rej
+			mini_false_accep = false_accep
+
+	#Ends for loop 
+	print "It takes", datetime.now-startTime, "to finish evaluation and find the optimal threshold." 
+	print "The optimal threshold for the M-class classifier is", threshold, "with false rejection", mini_false_rej, "and false acceptance", mini_false_accep
 
 if __name__ == '__main__':
 	Evaluation()
