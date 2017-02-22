@@ -5,7 +5,8 @@ np.seterr(divide='ignore', invalid='ignore')
 import collections 	
 from datetime import datetime
 import scipy.linalg 
-import sys 
+import sys
+import pickle  
 
 def LDA():
 	"""
@@ -144,6 +145,14 @@ def LDA():
 	startTime = datetime.now() 
 	eigen_values, eigen_vectors = scipy.linalg.eig(CovB, CovW) 
 	print "It takes", datetime.now() - startTime, "to finish training LDA"
+	
+	#Store the eigen_values, eigen_vectors in a seperate file
+	file_Name = "Eigens"
+	f = open(file_Name, "wb")
+	pickle.dump(eigen_values, f)
+	pickle.dump(eigen_vectors, f)
+	f.close()
+	
 	return eigen_values, eigen_vectors #return tuples 
 
 def Evaluation(): 
@@ -152,7 +161,14 @@ def Evaluation():
 	Using Evaluation data to find threshold for the classifier. 
 	"""
 	startTime = datetime.now()
-	eigen_values, eigen_vectors = LDA()
+	
+	#import eigen_values and eigen_vectors 
+	file_Name = "Eigens"
+	f = open(file_Name, "rb")
+	eigen_values = pickle.load(f)
+	eigen_vectors = pickle.load(f)
+	f.close()
+	#eigen_values, eigen_vectors = LDA()
 	print "Start Evaluation"
 	P = eigen_vectors[:,-1] #at most C-1 dimensions
 	P = P[:,None] #make it a column vector
@@ -215,6 +231,8 @@ def Evaluation():
 
 	#test 5
 	print "test 5"
+	print "length of list_enroll_speaker_id is", len(list_enroll_speaker_id)
+	print "length of Uniq_spk is", len(Uniq_spk)
 	assert len(list_enroll_speaker_id) == len(Uniq_spk), "fail test 5"
 	assert len(list_enroll_speaker_id) == len(list_enroll_speaker), "fail test 5"
 	for i in list_enroll_speaker_id: 
@@ -371,4 +389,4 @@ def Evaluation():
 	print "The optimal threshold for the M-class classifier is", threshold, "with false rejection", mini_false_rej, "and false acceptance", mini_false_accep
 
 if __name__ == '__main__':
-	Evaluation()
+	LDA()
