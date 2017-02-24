@@ -5,7 +5,6 @@ np.seterr(divide='ignore', invalid='ignore')
 import collections 	
 from datetime import datetime
 import scipy.linalg 
-import sys
 import pickle  
 import time 
 
@@ -188,7 +187,6 @@ def Evaluation():
 				Uniq_ivector.append(i_vector_id)
 
 	print "The original length of Uniq_spk is", len(Uniq_spk) #4267
-	print "The original length of Uniq_ivector is", len(Uniq_ivector) #767
 
 	############################################
 	#Speaker Enrollment 
@@ -223,64 +221,36 @@ def Evaluation():
 
 	############################################
 
-	print "The original lenght of list_enroll_speaker_id is", len(list_enroll_speaker_id) #11936
+	print "The original length of list_enroll_speaker_id is", len(list_enroll_speaker_id) #11936
 
-	test1 = [] 
-	for spk_id in Uniq_spk:
-		if spk_id not in list_enroll_speaker_id:
-			while spk_id in Uniq_spk: 
-				Uniq_spk.remove(spk_id)
-				test1.append(spk_id)
-		#filter(lambda a: a != 2, x)
-		#filter(lambda spk_id: spk_id not in list_enroll_speaker_id, Uniq_spk)
-			
-	test2 = []
-	for spk_id in list_enroll_speaker_id:
-		if spk_id not in Uniq_spk:
-			while spk_id in list_enroll_speaker_id:	
-				index = list_enroll_speaker_id.index(spk_id)
-				test2.append(spk_id)
-				del list_enroll_speaker_id[index]
-				del list_enroll_speaker[index]
-	"""
-	for spk_id in list_enroll_speaker_id:
-		#if spk_id not in list_enroll_speaker_id:
-			#Uniq_spk.remove(spk_id)
-		#filter(lambda a: a != 2, x)
-		filter(lambda spk_id: spk_id not in Uniq_spk, list_enroll_speaker_id)
-	"""
+	new_Uniq_spk = []
+	new_list_enroll_speaker = []
+	for spk_id in list_enroll_speaker_id: 
+		if spk_id in Uniq_spk: 
+			index = list_enroll_speaker_id.index(spk_id)
+			new_Uniq_spk.append(spk_id)
+			new_list_enroll_speaker.append(list_enroll_speaker[index])
+
 	#test 5
 	print "test 5"
-	#print Uniq_spk:
-	#time.sleep(10)
-	#print list_enroll_speaker_id 
-	print "length of test1 is", len(test1)
-	print "length of test2 is", len(test2)
-	assert len(list_enroll_speaker_id) == len(list_enroll_speaker), "fail test 5"
-	print "length of list_enroll_speaker_id is", len(list_enroll_speaker_id) #7559
-	print "length of Uniq_spk is", len(Uniq_spk) #4226
-	assert len(list_enroll_speaker_id) == len(Uniq_spk), "fail test 5"
-	for i in list_enroll_speaker_id: 
-		if i not in Uniq_spk: 
-			print "fail test 5"
-			sys.exit()
-
-	#Uniq_spk should have the same order as list_enroll_speaker_id
-	Uniq_spk = list_enroll_speaker_id
+	print "length of the new_Uniq_spk is", len(new_Uniq_spk); 
+	print "length of the new list_enroll_speaker is", len(new_list_enroll_speaker)
+	assert len(new_Uniq_spk) == len(new_list_enroll_speaker), "fail test 5"
 	
 	#Transform lists to matrices 
-	arr_enroll_speaker = np.vstack(list_enroll_speaker)	
+	arr_enroll_speaker = np.vstack(new_list_enroll_speaker)	
 	y_enroll = np.dot(arr_enroll_speaker, P) 	
 	
 	#test 6
 	print "test 6"
-	print len(list_enroll_speaker_id) == arr_enroll_speaker.shape[0]
+	print len(new_Uniq_spk) == arr_enroll_speaker.shape[0]
 	assert y_enroll.shape[0] == arr_enroll_speaker.shape[0], "fail test 6"
 	assert y_enroll.shape[1] == P.shape[1], "fail test 6"
 
-	############################################	
+##################################################	
 	#Speaker Testing 
 	print "Start inputing testing data"
+	print "The original length of Uniq_ivector is", len(Uniq_ivector) #767
 
 	#initiate list
 	list_test_speaker = []
@@ -296,33 +266,18 @@ def Evaluation():
 
 #################################################
 
-	for ivector in list_test_speaker:
-		if ivector not in Uniq_ivector:
-			list_test_speaker.remove(ivector)
-	
-	for ivector in Uniq_ivector:
-		if ivector not in list_test_speaker:
-			Uniq_ivector.remove(ivector)
-
-	#test 7.1 
-	print "test 7.1"
-	assert len(list_test_speaker) == len(Uniq_ivector), "fail test 7.1"
-	for i in list_test_speaker: 
-		if i not in Uniq_ivector: 
-			print "fail test 7.1"
-			sys.exit()	
-
-	#Uniq_ivector should have the same order as list_test_speaker
-	Uniq_ivector = list_test_speaker
-
-##################################################
+	new_Uniq_ivector = []
+	for dummy in list_test_index: 
+		if dummy in Uniq_ivector:
+			index = list_test_index.index(dummy)
+			new_Uniq_ivector.append(list_test_speaker[index])
 
 	#Transform lists to matrices 
-	arr_test_speaker = np.vstack(list_test_speaker)	
+	arr_test_speaker = np.vstack(new_Uniq_ivector)	
 	y_test = np.dot(arr_test_speaker, P) 
 	
-	#test 7.2
-	print "test 7.2"
+	#test 7
+	print "test 7"
 	print y_test.shape[0] == arr_test_speaker.shape[0]
 	print y_test.shape[1] == P.shape[1]
 
@@ -332,7 +287,7 @@ def Evaluation():
 	#inner product of the enrollment data and testing data 
 	#S is a matrix with y_enroll.shape[0] by y_test.shape[0] dimensions
 	S = np.dot(y_enroll, y_test.T)
-	objective = np.zeros((len(Uniq_spk), len(Uniq_ivector)))			
+	objective = np.zeros((len(new_Uniq_spk), len(new_Uniq_ivector)))			
 	
 	#test 8
 	print "test 8"
@@ -350,8 +305,8 @@ def Evaluation():
 	with open("/export/b15/janto/kaldi/kaldi/egs/sre10/v1/data/sre10_test/trials") as fopen:
 		for line in fopen:
 			(spk, i_vector_id, binary) = line.split()			
-			temp_row = Uniq_spk.index(spk)
-			temp_column = Uniq_ivector.index(i_vector_id)
+			temp_row = new_Uniq_spk.index(spk)
+			temp_column = new_Uniq_ivector.index(i_vector_id)
 			if binary == "target": 
 				objective[temp_row][temp_column] = 1
 			elif binary == "nontarget":
@@ -373,7 +328,7 @@ def Evaluation():
 	prev_diff = 100
 	(false_rej, false_accep) = (0, 0)
 	for threshold in np.arrangenp.arange(-2, 2, 0.01):
-		C = np.zeros((len(Uniq_spk), len(Uniq_ivector)))
+		C = np.zeros((len(new_Uniq_spk), len(new_Uniq_ivector)))
 		C = S > threshold 
 
 	#Compare C with Objective to calculate error rate
