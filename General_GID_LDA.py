@@ -247,7 +247,7 @@ def Evaluation():
 	assert y_enroll.shape[0] == arr_enroll_speaker.shape[0], "fail test 6"
 	assert y_enroll.shape[1] == P.shape[1], "fail test 6"
 
-##################################################	
+#################################################	
 	#Speaker Testing 
 	print "Start inputing testing data"
 	print "The original length of Uniq_ivector is", len(Uniq_ivector) #767
