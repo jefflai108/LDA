@@ -1,7 +1,5 @@
-# clsp
-Python code at Center for Language and Speech Processing 
-
-Code should run on the CLSP server. 
+# LDA
+An implementation of Linear Discriminant Analysis on multi-class speaker recognition. Written in Python. 
 
 
 
